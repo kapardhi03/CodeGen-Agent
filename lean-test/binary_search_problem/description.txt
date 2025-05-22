@@ -1,0 +1,11 @@
+-----Description----- 
+This task requires implementing a binary search algorithm in Lean 4. Binary search is an efficient algorithm for finding an element in a sorted array. The function should search for a target value in a sorted array of integers and return the index of the target if found, or -1 if the target is not present in the array.
+
+-----Input-----
+The input consists of:
+arr: A sorted array of integers in ascending order.
+target: The integer value to search for in the array.
+
+-----Output-----
+The output is an integer:
+Returns the index of the target element in the array if found, or -1 if the target is not present in the array.

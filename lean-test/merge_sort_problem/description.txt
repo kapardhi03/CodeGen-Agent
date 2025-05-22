@@ -1,0 +1,10 @@
+-----Description----- 
+This task requires implementing the merge sort algorithm in Lean 4. Merge sort is a divide-and-conquer sorting algorithm that divides an array into two halves, recursively sorts them, and then merges the sorted halves. The function should take an array of integers and return a new array with the same elements sorted in ascending order.
+
+-----Input-----
+The input consists of:
+arr: An array of integers.
+
+-----Output-----
+The output is an array of integers:
+Returns a new array containing all elements from the input array, sorted in ascending order.

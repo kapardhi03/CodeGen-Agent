@@ -1,0 +1,172 @@
+Here are some examples of Lean 4 code for basic functions and their proofs:
+
+# Example 1: Sum of two integers
+def add (a b : Int) : Int := a + b
+
+def add_spec_commutative (a b : Int) (result : Int) : Prop :=
+  result = a + b ∧ result = b + a
+
+example (a b : Int) : add_spec_commutative a b (add a b) := by
+  unfold add add_spec_commutative
+  simp
+  constructor
+  · rfl
+  · apply Int.add_comm
+<EOC>
+
+# Example 2: Maximum of two integers
+def max2 (a b : Int) : Int :=
+  if a ≥ b then a else b
+
+def max2_spec_isMax (a b : Int) (result : Int) : Prop :=
+  (result ≥ a ∧ result ≥ b) ∧ (result = a ∨ result = b)
+
+example (a b : Int) : max2_spec_isMax a b (max2 a b) := by
+  unfold max2 max2_spec_isMax
+  split
+  · intro h
+    constructor
+    · constructor
+      · exact h
+      · trans a; exact h; exact le_refl b
+    · left; rfl
+  · intro h
+    constructor
+    · constructor
+      · trans b; exact le_refl a; exact h
+      · exact h
+    · right; rfl
+<EOC>
+
+# Example 3: Absolute value of an integer
+def abs (a : Int) : Int :=
+  if a ≥ 0 then a else -a
+
+def abs_spec_nonneg (a : Int) (result : Int) : Prop :=
+  result ≥ 0 ∧ (result = a ∨ result = -a)
+
+example (a : Int) : abs_spec_nonneg a (abs a) := by
+  unfold abs abs_spec_nonneg
+  split
+  · intro h
+    constructor
+    · exact h
+    · left; rfl
+  · intro h
+    constructor
+    · apply neg_nonneg_of_nonpos
+      exact le_of_lt h
+    · right; rfl
+<EOC>
+
+# Example 4: Minimum of three integers
+def minOfThree (a b c : Int) : Int :=
+  if a ≤ b then
+    if a ≤ c then a else c
+  else
+    if b ≤ c then b else c
+
+def minOfThree_spec_isMin (a b c : Int) (result : Int) : Prop :=
+  (result ≤ a ∧ result ≤ b ∧ result ≤ c) ∧ (result = a ∨ result = b ∨ result = c)
+
+example (a b c : Int) : minOfThree_spec_isMin a b c (minOfThree a b c) := by
+  unfold minOfThree minOfThree_spec_isMin
+  split
+  · intro h_a_le_b
+    split
+    · intro h_a_le_c
+      constructor
+      · constructor
+        · exact le_refl a
+        · constructor
+          · exact h_a_le_b
+          · exact h_a_le_c
+      · left; rfl
+    · intro h_c_lt_a
+      have h_c_le_a : c ≤ a := le_of_lt h_c_lt_a
+      constructor
+      · constructor
+        · exact h_c_le_a
+        · constructor
+          · trans a; exact h_c_le_a; exact h_a_le_b
+          · exact le_refl c
+      · right; right; rfl
+  · intro h_b_lt_a
+    have h_b_le_a : b ≤ a := le_of_lt h_b_lt_a
+    split
+    · intro h_b_le_c
+      constructor
+      · constructor
+        · exact h_b_le_a
+        · constructor
+          · exact le_refl b
+          · exact h_b_le_c
+      · right; left; rfl
+    · intro h_c_lt_b
+      have h_c_le_b : c ≤ b := le_of_lt h_c_lt_b
+      constructor
+      · constructor
+        · trans b; exact h_c_le_b; exact h_b_le_a
+        · exact h_c_le_b
+        · exact le_refl c
+      · right; right; rfl
+<EOC>
+
+# Example 5: Find first occurrence of an element in a list
+def indexOf {α : Type} [BEq α] (xs : List α) (a : α) : Nat :=
+  match xs with
+  | [] => 0
+  | x :: xs' => if x == a then 0 else indexOf xs' a + 1
+
+def indexOf_spec {α : Type} [BEq α] [LawfulBEq α] (xs : List α) (a : α) (result : Nat) : Prop :=
+  if h : result < xs.length then
+    xs.get ⟨result, h⟩ = a ∧
+    ∀ (i : Nat), i < result → xs.get ⟨i, Nat.lt_trans i result xs.length h⟩ ≠ a
+  else
+    ∀ (i : Nat), i < xs.length → xs.get ⟨i, i.lt_length_of_lt h⟩ ≠ a
+
+example {α : Type} [BEq α] [LawfulBEq α] (xs : List α) (a : α) : indexOf_spec xs a (indexOf xs a) := by
+  induction xs with
+  | nil =>
+    unfold indexOf indexOf_spec
+    simp
+  | cons x xs' ih =>
+    unfold indexOf
+    split
+    · intro h_eq
+      rw [beq_eq_true_iff] at h_eq
+      subst h_eq
+      unfold indexOf_spec
+      simp
+      constructor
+      · rfl
+      · intro i h
+        simp at h
+        contradiction
+    · intro h_ne
+      rw [beq_eq_false_iff] at h_ne
+      specialize ih a
+      have result := indexOf xs' a
+      unfold indexOf_spec
+      split
+      · intro h
+        simp at h ⊢
+        cases h with
+        | mk h1 h2 =>
+          constructor
+          · exact h1
+          · intro i hi
+            cases i with
+            | zero => exact h_ne
+            | succ i' =>
+              apply h2
+              exact i'.lt_succ_self
+      · intro h
+        simp at h ⊢
+        intro i hi
+        cases i with
+        | zero => exact h_ne
+        | succ i' =>
+          apply h
+          exact Nat.lt_of_succ_lt_succ hi
+<EOC>
