@@ -511,58 +511,128 @@ def get_task_lean_template_from_taskpath(task_path: str) -> str:
         task_lean_template = f.read()
     return task_lean_template
 
-def main_workflow(problem_description: str, task_lean_code: str = "") -> Dict[str, str]:
+def main_workflow(problem_description: str, task_lean_code: str = "", 
+                 prefer_api: bool = True) -> Dict[str, str]:
     """
     Main workflow for the coding agent with comprehensive fallbacks.
+    
+    Args:
+        problem_description: Natural language description of the task
+        task_lean_code: Lean 4 template code
+        prefer_api: If True, try API agents first; if False, try rule-based first
     """
     # Extract function information
     function_name, function_signature, spec_info = extract_signature_and_spec(task_lean_code)
     
-    # Try rule-based solution first (most reliable)
-    rule_solution = generate_rule_based_solution(function_name, spec_info, problem_description)
-    if rule_solution["code"] != "sorry":
-        print(f"Using rule-based solution for {function_name}")
-        return rule_solution
-    
-    # Try full agent workflow with API
-    try:
-        from src.agents import LLM_Agent, Reasoning_Agent
-        
-        # Ensure database exists
-        vector_db_file, embedding_model = ensure_database_exists()
-        if vector_db_file is None:
-            print("RAG database unavailable, using rule-based fallback")
+    if prefer_api:
+        # API-first approach
+        print(f"Using API-first approach for {function_name}")
+        try:
+            return _try_api_workflow(problem_description, task_lean_code, function_name, 
+                                   function_signature, spec_info)
+        except Exception as e:
+            print(f"API workflow failed: {e}")
+            print("Falling back to rule-based solution")
             return generate_rule_based_solution(function_name, spec_info, problem_description)
-        
-        # Initialize agents
-        planning_agent = LLM_Agent(model="gpt-4o")
-        generation_agent = LLM_Agent(model="gpt-4o")  
-        verification_agent = Reasoning_Agent(model="o3-mini")
-        
-        # Step 1: Planning
-        plan = planning_phase(planning_agent, problem_description, function_signature, spec_info, vector_db_file, embedding_model)
-        
-        # Step 2: Generation
-        implementation = generation_phase(generation_agent, problem_description, task_lean_code, plan, vector_db_file, embedding_model)
-        
-        # Step 3: Verification and improvement loop
-        max_iterations = 3
-        for i in range(max_iterations):
-            verification_result = verification_phase(verification_agent, problem_description, task_lean_code, implementation)
-            
-            if verification_result["success"]:
-                print(f"Solution successful after {i+1} iterations")
-                break
-                
-            # If not successful and we have iterations left, try to improve
-            if i < max_iterations - 1:
-                print(f"Iteration {i+1} failed, trying to improve...")
-                # For simplicity, try rule-based fallback on failure
-                implementation = generate_rule_based_solution(function_name, spec_info, problem_description)
-        
-        return implementation
     
+    else:
+        # Rule-based first approach (current behavior)
+        print(f"Using rule-based first approach for {function_name}")
+        rule_solution = generate_rule_based_solution(function_name, spec_info, problem_description)
+        
+        if rule_solution["code"] != "sorry":
+            print(f"Using rule-based solution for {function_name}")
+            return rule_solution
+        
+        # Try API if rule-based returns "sorry"
+        print("Rule-based solution unavailable, trying API workflow...")
+        try:
+            return _try_api_workflow(problem_description, task_lean_code, function_name, 
+                                   function_signature, spec_info)
+        except Exception as e:
+            print(f"API workflow failed: {e}")
+            return {"code": "sorry", "proof": "sorry"}
+
+def _try_api_workflow(problem_description: str, task_lean_code: str, function_name: str,
+                     function_signature: str, spec_info: Dict) -> Dict[str, str]:
+    """
+    Extracted API workflow logic for reuse.
+    """
+    from src.agents import LLM_Agent, Reasoning_Agent
+    
+    # Ensure database exists
+    vector_db_file, embedding_model = ensure_database_exists()
+    if vector_db_file is None:
+        raise Exception("RAG database unavailable")
+    
+    # Initialize agents
+    planning_agent = LLM_Agent(model="gpt-4o")
+    generation_agent = LLM_Agent(model="gpt-4o")  
+    verification_agent = Reasoning_Agent(model="o3-mini")
+    
+    # Step 1: Planning
+    plan = planning_phase(planning_agent, problem_description, function_signature, 
+                         spec_info, vector_db_file, embedding_model)
+    
+    # Step 2: Generation
+    implementation = generation_phase(generation_agent, problem_description, task_lean_code, 
+                                    plan, vector_db_file, embedding_model)
+    
+    # Step 3: Verification and improvement loop
+    max_iterations = 3
+    for i in range(max_iterations):
+        verification_result = verification_phase(verification_agent, problem_description, 
+                                               task_lean_code, implementation)
+        
+        if verification_result["success"]:
+            print(f"Solution successful after {i+1} iterations")
+            break
+            
+        # If not successful and we have iterations left, try to improve
+        if i < max_iterations - 1:
+            print(f"Iteration {i+1} failed, trying to improve...")
+            # Try regeneration with feedback
+            implementation = _regenerate_with_feedback(generation_agent, problem_description, 
+                                                     task_lean_code, plan, verification_result,
+                                                     vector_db_file, embedding_model)
+    
+    return implementation
+
+def _regenerate_with_feedback(generation_agent, problem_description: str, task_lean_code: str,
+                            plan: Dict, verification_result: Dict, vector_db_file: str, 
+                            embedding_model) -> Dict[str, str]:
+    """
+    Regenerate solution incorporating feedback from verification.
+    """
+    try:
+        feedback_prompt = [
+            {"role": "system", "content": "You are an expert Lean 4 programmer. Fix the implementation based on the feedback."},
+            {"role": "user", "content": f"""
+            Problem: {problem_description}
+            Previous attempt failed with feedback: {verification_result['feedback']}
+            
+            Generate improved:
+            CODE:
+            <your_improved_code>
+            
+            PROOF:
+            <your_improved_proof>
+            """}
+        ]
+        
+        response = generation_agent.get_response(feedback_prompt)
+        
+        import re
+        code_match = re.search(r'CODE:(.*?)(?=PROOF:|$)', response, re.DOTALL)
+        proof_match = re.search(r'PROOF:(.*?)(?=$)', response, re.DOTALL)
+        
+        code = code_match.group(1).strip() if code_match else "sorry"
+        proof = proof_match.group(1).strip() if proof_match else "sorry"
+        
+        return {"code": code, "proof": proof}
+        
     except Exception as e:
-        print(f"Agent workflow failed: {e}")
-        print("Falling back to rule-based solution")
+        print(f"Regeneration failed: {e}")
+        # Fallback to rule-based as last resort
+        function_name, _, spec_info = extract_signature_and_spec(task_lean_code)
         return generate_rule_based_solution(function_name, spec_info, problem_description)
