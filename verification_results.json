@@ -1,0 +1,38 @@
+{
+  "environment": {
+    "python_version": "3.13.2 (main, Feb  4 2025, 14:51:09) [Clang 16.0.0 (clang-1600.0.26.6)]",
+    "working_directory": "/Users/kapardhikannekanti/CodeGen-Agent",
+    "lab2_directory": false,
+    "lean_available": true,
+    "api_key_present": false,
+    "lean_version": "Lake version 5.0.0-6caaee8 (Lean version 4.19.0)"
+  },
+  "dependencies": {
+    "missing_packages": [
+      "openai",
+      "numpy",
+      "sentence_transformers",
+      "tiktoken",
+      "requests",
+      "beautifulsoup4",
+      "pydantic"
+    ],
+    "installed_packages": []
+  },
+  "lean_execution": {
+    "lean_execution": false,
+    "result": "Lean Error: error: [root]: no configuration file with a supported extension:\n././lakefile.lean\n././lakefile.toml"
+  },
+  "database": {
+    "openai_db_exists": false,
+    "mini_db_exists": false,
+    "documents_exist": false,
+    "database_creation_error": "No module named 'numpy'"
+  },
+  "agents": {
+    "error": "No module named 'openai'"
+  },
+  "task_test": {
+    "error": "Task directory not found"
+  }
+}
