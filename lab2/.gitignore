@@ -1,9 +1,55 @@
-temp_project/
-.lake/
-submission.zip
-lean_playground/*
-!lean_playground/.gitkeep
-
+# Python
 __pycache__/
-.venv/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Lean 4
+.lake/
+lake-manifest.json
+
+# Project specific
+verification_results.json
+lean_playground/TempTest.lean
+lean_playground/*.lean
+!lean_playground/.gitkeep
+database.npy
+database_mini.npy
+*_chunks.pkl
+submission.zip
+
+# Temporary files
+temp_project/
 .tasks_copy/
