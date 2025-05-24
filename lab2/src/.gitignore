@@ -1,0 +1,6 @@
+
+# Database files (will be regenerated)
+*.npy
+*_chunks.pkl
+verification_results.json
+lean_playground/TempTest.lean

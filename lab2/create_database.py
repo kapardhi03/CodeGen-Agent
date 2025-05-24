@@ -341,6 +341,46 @@ def check_existing_databases():
     
     return found_valid
 
+def create_openai_database() -> Tuple[bool, Optional[str]]:
+    """
+    Create database using OpenAI embeddings.
+    
+    Returns:
+        Tuple of (success, error_message)
+    """
+    try:
+        print("Attempting to create database with OpenAI embeddings...")
+        
+        # Check if API key is available
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key or api_key.strip() == "":
+            return False, "OpenAI API key not found or empty in environment variables"
+        
+        # Skip OpenAI if using dummy/test key
+        if api_key.lower() in ["dummy", "test", "dummy-key", "dummy-key-for-testing"]:
+            return False, "Using dummy API key - skipping OpenAI database creation"
+        
+        embedding_model = OpenAIEmbeddingModel()
+        
+        # Test if we can generate embeddings
+        test_embedding = embedding_model.get_embedding("test")
+        if not test_embedding:
+            return False, "Failed to generate test embedding"
+        
+        vector_db = VectorDB(
+            directory="documents",
+            vector_file="database.npy",
+            embedding_model=embedding_model
+        )
+        
+        print("Successfully created database with OpenAI embeddings!")
+        return True, None
+        
+    except Exception as e:
+        error_msg = f"OpenAI database creation failed: {str(e)}"
+        print(error_msg)
+        return False, error_msg
+    
 def main():
     """Main function for database creation."""
     print("RAG Database Setup Tool")

@@ -2,17 +2,16 @@ import os
 import numpy as np
 import requests
 from bs4 import BeautifulSoup
-# from openai import OpenAI  # Commented out for now - uncomment when API key available
+from openai import OpenAI
 import tiktoken  # For token counting
 import PyPDF2
 from src.embedding_models import BaseEmbeddingModel, OpenAIEmbeddingModel, MiniEmbeddingModel
 import pickle 
 
-# Commented out - this was causing the import error
-# client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 class VectorDB:
-    def __init__(self, directory="documents", vector_file="embeddings.npy", max_words_per_chunk=4000, embedding_model: BaseEmbeddingModel = None):
+    def __init__(self, directory="documents", vector_file="embeddings.npy", max_words_per_chunk=4000, embedding_model: BaseEmbeddingModel = OpenAIEmbeddingModel()):
         """
         Initializes the in-memory database by processing text files and generating embeddings.
         """
@@ -20,18 +19,6 @@ class VectorDB:
         self.vector_file = vector_file
         self.chunks_file = os.path.splitext(vector_file)[0] + "_chunks.pkl"
         self.max_words_per_chunk = max_words_per_chunk
-        
-        # Choose embedding model if none provided
-        if embedding_model is None:
-            try:
-                # Try OpenAI first (will fail if no API key)
-                embedding_model = OpenAIEmbeddingModel()
-                print("[VectorDB] Using OpenAI embeddings")
-            except:
-                # Fallback to MiniLM
-                embedding_model = MiniEmbeddingModel()
-                print("[VectorDB] Using MiniLM embeddings")
-        
         self.embedding_model = embedding_model
         
         docs = self.read_text_files()
@@ -163,19 +150,16 @@ class VectorDB:
 
 if __name__ == "__main__":
     # Create and save the database
-    # Commented out OpenAI for now - uncomment when API key is available
-    # openai_embedding_model = OpenAIEmbeddingModel()
+    openai_embedding_model = OpenAIEmbeddingModel()
     mini_embedding_model = MiniEmbeddingModel()
 
     # Name of the file that stores the embeddings in memory. 
     embedding_database_file = "database.npy"
 
-    # Using MiniLM for now - change to openai_embedding_model when API key available
     vector_db = VectorDB(directory="documents", 
                          vector_file=embedding_database_file, 
-                         embedding_model=mini_embedding_model)
+                         embedding_model=openai_embedding_model)
 
     # Example usage of querying the database. 
     query = "What is reinforcement learning?"
-    # Using MiniLM for now - change to openai_embedding_model when API key available
-    top_k_results = VectorDB.get_top_k(embedding_database_file, mini_embedding_model, query, k=3, verbose=True)
+    top_k_results = VectorDB.get_top_k(embedding_database_file, openai_embedding_model, query, k=3, verbose=True)
