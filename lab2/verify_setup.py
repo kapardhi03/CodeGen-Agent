@@ -9,6 +9,14 @@ import sys
 import time
 from typing import Dict, Any
 
+def categorize_lean_error(error_msg: str) -> str:
+    """More granular error categorization for better feedback"""
+    if "type mismatch" in error_msg:
+        return "TYPE_ERROR"
+    elif "tactic failed" in error_msg:
+        return "PROOF_TACTIC_ERROR"
+
+
 def check_environment() -> Dict[str, Any]:
     """Check if the basic environment is set up correctly."""
     print("🔍 Checking environment setup...")
