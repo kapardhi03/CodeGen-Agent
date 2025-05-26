@@ -1,10 +1,5 @@
 # CodeGen-Agent
 
-# Create comprehensive root README for submission
-cat > README.md << 'EOF'
-# Advanced LLM Agents MOOC - Course Labs
-
-This repository contains lab assignments for the Advanced LLM Agents MOOC course, demonstrating implementation of AI agents for various computational tasks.
 
 ## 📁 Repository Structure
 
