@@ -6,7 +6,7 @@
 
 ### **Three-Agent Design Pattern**
 
-Our implementation follows a sophisticated three-agent architecture that separates concerns and enables robust theorem proving:
+The current implementation follows a sophisticated three-agent architecture that separates concerns and enables robust theorem proving:
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
