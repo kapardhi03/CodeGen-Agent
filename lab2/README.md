@@ -1,5 +1,4 @@
 # Lab 2: Multi-Agent Coding System for Lean 4 Theorem Proving
-## Architecture Overview & Design Document
 
 ---
 
