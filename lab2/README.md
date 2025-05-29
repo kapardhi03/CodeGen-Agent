@@ -1,10 +1,6 @@
 # Lab 2: Multi-Agent Coding System for Lean 4 Theorem Proving
 ## Architecture Overview & Design Document
 
-**Student:** [Your Name]  
-**Course:** Advanced LLM Agents MOOC, Spring 2025  
-**Date:** January 2025
-
 ---
 
 ## 🏗️ **System Architecture**
